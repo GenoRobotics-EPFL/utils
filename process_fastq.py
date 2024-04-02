@@ -2,11 +2,11 @@ import glob, gzip, math, random
 import numpy as np
 from Bio import SeqIO, Align
 import os.path as ospath
+
 import os
 import gzip
 import shutil
-import sys 
-import matplotlib.pyplot as plt
+import sys import matplotlib.pyplot as plt
 
 
 #----------------------------
@@ -33,11 +33,8 @@ def extract_gz(src_file, dst_file):
 def read_fastq(fastq_filepath=None):
     """
     Read a fastq file and return the reads.
-    
-    Args:
-        fastq_filepath (str): filepath of the .fastq file
-    Returns: 
-        reads(list of Bio.SeqRecord.SeqRecord): reads from the fastq file
+    :param fastq_filepath: filepath of the .fastq file [str]
+    :return: reads from the fastq file [list of Bio.SeqRecord.SeqRecord]
     """
     if fastq_filepath is None: fastq_filepath = "data/rbcL_Qiagen_tomato.fastq" # default path (example)
     if fastq_filepath.lower().endswith('.gz'):
