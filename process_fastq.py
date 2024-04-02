@@ -1,13 +1,51 @@
 import glob, gzip, math, random
 import numpy as np
 from Bio import SeqIO, Align
+import os.path as ospath
 import os
 import gzip
 import shutil
+import sys import matplotlib.pyplot as plt
+
+
+#----------------------------
+#DEAL WITH FASTQ FILES
+#----------------------------
+
+def extract_gz(src_file, dst_file):
+    """
+    Extracts a gzipped file.
+
+    Args:
+        src_file (str): Path to the source gzipped file.
+        dst_file (str): Path to the destination file.
+
+    Returns:
+        None
+    """
+    with gzip.open(src_file, 'rb') as f_in:
+        with open(dst_file, 'wb') as f_out:
+            shutil.copyfileobj(f_in, f_out)
 
 
 
-## AWEN'S CODE
+def read_fastq(fastq_filepath=None):
+    """
+    Read a fastq file and return the reads.
+    :param fastq_filepath: filepath of the .fastq file [str]
+    :return: reads from the fastq file [list of Bio.SeqRecord.SeqRecord]
+    """
+    if fastq_filepath is None: fastq_filepath = "data/rbcL_Qiagen_tomato.fastq" # default path (example)
+    if fastq_filepath.lower().endswith('.gz'):
+        f = gzip.open(fastq_filepath, 'rt')
+    else:
+        f = open(fastq_filepath, 'rt')
+    reads = []
+    for read in SeqIO.parse(f, "fastq"):
+        reads.append(read)
+    return reads
+
+
 
 def split_fastq(input_path, output_dir, base_name, percentile=20):
     """
@@ -40,42 +78,6 @@ def split_fastq(input_path, output_dir, base_name, percentile=20):
     return top_sequences_path, remaining_sequences_path
 
 
-## MILOU'S CODE
-
-def extract_gz(src_file, dst_file):
-    """
-    Extracts a gzipped file.
-
-    Args:
-        src_file (str): Path to the source gzipped file.
-        dst_file (str): Path to the destination file.
-
-    Returns:
-        None
-    """
-    with gzip.open(src_file, 'rb') as f_in:
-        with open(dst_file, 'wb') as f_out:
-            shutil.copyfileobj(f_in, f_out)
-
-
-## JEREMY'S CODE
-
-def read_fastq(fastq_filepath=None):
-    """
-    Read a fastq file and return the reads.
-    :param fastq_filepath: filepath of the .fastq file [str]
-    :return: reads from the fastq file [list of Bio.SeqRecord.SeqRecord]
-    """
-    if fastq_filepath is None: fastq_filepath = "data/rbcL_Qiagen_tomato.fastq" # default path (example)
-    if fastq_filepath.lower().endswith('.gz'):
-        f = gzip.open(fastq_filepath, 'rt')
-    else:
-        f = open(fastq_filepath, 'rt')
-    reads = []
-    for read in SeqIO.parse(f, "fastq"):
-        reads.append(read)
-    return reads
-
 def concatenate_fastq(src_folder=None, dst=None):
     """
     Concatenate all .fastq from a folder into a single .fastq file.
@@ -103,26 +105,104 @@ def concatenate_fastq(src_folder=None, dst=None):
         if len(fastq_iterators) == 0:
             break
 
-def get_substring(string, k): # ACTUALLY NOT USED IN THE CODE
-    """
-    Get substring of length k from a string.
-    :param string: original string [str]
-    :param k: length of substrings [int]
-    :return: list of substrings [list of str | len=len(string)-k+1]
-    """
-    return [string[i:i+k] for i in range(0, len(string)-k+1)]
 
-def get_subprimer(primer, k, error_ratio=0): # ACTUALLY NOT USED IN THE CODE
+def extract_fastq(main_dir, sample_nb, dst):
     """
-    Get subprimers (substrings of a primer) of length k and the
-    :param primer: primer sequence [str]
-    :param k: length of subprimers [int]
-    :param error_ratio: error_ratio allowed [float]
-    :return: list of subprimers (subprimer sequence, left characters to try, right characters to try) [list of [str, int, int]]
-    """
-    ratio = 1.0 + error_ratio
-    return [[primer[i:i+k], math.ceil(ratio*i), math.ceil(ratio*(len(primer)-i-k))] for i in range(0, len(primer)-k+1)]
+    extract all fastq files under a certain barcode/sample number from an expedition results folder.
 
+    Parameters
+    ----------
+    main_dir: expedition folder path
+    sample_nb: sample number for which to extract fastq. ie 6 to extract from folder barcode06
+    dst: destination file path
+    """
+    for root, dirs, files in os.walk(main_dir):
+        if "fastq_pass" in dirs:
+            pass_dir = ospath.join(root, "fastq_pass")
+            break
+    for root, dirs, files in os.walk(pass_dir):
+        if f"barcode{sample_nb}" in dirs:
+            fastq_dir = ospath.join(root, f"barcode{sample_nb}")
+        elif f"barcode0{sample_nb}" in dirs:
+            fastq_dir = ospath.join(root, f"barcode0{sample_nb}")
+    concatenate_fastq(fastq_dir, dst)
+
+#----------------------------------
+#GET AND VISUALIZE QUALITY SCORES
+#----------------------------------
+
+def getContentFile(pathFastqFile: str):
+
+    # open file and get all the reads
+    allReadsAsString = []
+
+    with open(pathFastqFile) as fastq:
+        allReadsAsString = fastq.readlines()
+
+    return allReadsAsString
+
+
+def extractReadQuality(fileContent):
+
+    # the fileContent must contain multiple reads, where each read is 4 lines:
+    if not (len(fileContent) % 4 == 0):
+        raise ValueError("fastq file must have reads composed of 4 lines")
+
+    qualityOfReads = []
+
+    # the quality of each read is always the 4th element
+    for i in range(3, len(fileContent), 4):
+
+        line = fileContent[i]
+
+        # remove the newline character at the end
+        line = line[:-1]
+
+        qualityOfReads.append(line)
+
+    return qualityOfReads
+
+
+def convertQuality(allReadsQuality):
+
+    # note that here we can't distinguish the reads from each other anymore
+    # they are all in one list
+    convertedQualities = []
+
+    for readQuality in allReadsQuality:
+
+        for rawQuality in readQuality:
+
+            # transform the character into the int quality
+            score = ord(rawQuality) - 33
+
+            convertedQualities.append(score)
+
+    return convertedQualities
+
+
+def visualiseQualities(pathFastqFile, readQualityConverted):
+
+    plt.figure(figsize=(10, 6))
+
+    plt.hist(readQualityConverted, bins=range(0, 95))
+
+    plt.ylabel("Frequency")
+
+    plt.xlabel("Base quality score 0-93 (higher is better)")
+    plt.xlim(0, 95)
+
+    nameFile = os.path.basename(pathFastqFile)
+    plt.title(nameFile)
+
+    nameOutput = nameFile + ".png"
+    plt.savefig(nameOutput)  # saves in current directory
+
+
+#--------------------------------
+#CREATE AND DAMAGE SEQUENCES
+#--------------------------------
+    
 def create_random_sequence(length=500, seed=None):
     """
     Generate a random sequence.
@@ -159,24 +239,3 @@ def damage_sequence(sequence, mutation_rate=0.05, deletion_rate=0.05, insertion_
     sequence = "".join([sequence[i:i+1] + get_insert() if random.random() < insertion_rate else sequence[i:i+1] for i in range(len(sequence)+1)]) # insertion
     return sequence
 
-
-def extract_fastq(main_dir, sample_nb, dst):
-    """
-    extract all fastq files under a certain barcode/sample number from an expedition results folder.
-
-    Parameters
-    ----------
-    main_dir: expedition folder path
-    sample_nb: sample number for which to extract fastq. ie 6 to extract from folder barcode06
-    dst: destination file path
-    """
-    for root, dirs, files in os.walk(main_dir):
-        if "fastq_pass" in dirs:
-            pass_dir = ospath.join(root, "fastq_pass")
-            break
-    for root, dirs, files in os.walk(pass_dir):
-        if f"barcode{sample_nb}" in dirs:
-            fastq_dir = ospath.join(root, f"barcode{sample_nb}")
-        elif f"barcode0{sample_nb}" in dirs:
-            fastq_dir = ospath.join(root, f"barcode0{sample_nb}")
-    concatenate_fastq(fastq_dir, dst)
