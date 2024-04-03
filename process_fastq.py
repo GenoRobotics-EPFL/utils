@@ -34,8 +34,11 @@ def extract_gz(src_file, dst_file):
 def read_fastq(fastq_filepath=None):
     """
     Read a fastq file and return the reads.
-    :param fastq_filepath: filepath of the .fastq file [str]
-    :return: reads from the fastq file [list of Bio.SeqRecord.SeqRecord]
+    
+    Args:
+        fastq_filepath (str): filepath of the .fastq file
+    Returns: 
+        reads(list of Bio.SeqRecord.SeqRecord): reads from the fastq file
     """
     if fastq_filepath is None: fastq_filepath = "data/rbcL_Qiagen_tomato.fastq" # default path (example)
     if fastq_filepath.lower().endswith('.gz'):
@@ -110,7 +113,7 @@ def concatenate_fastq(src_folder=None, dst=None):
             break
 
 
-def extract_fastq(main_dir, barcode_nb, dst):
+def extract_fastq(main_dir, sample_nb, dst):
     """
     Extract all fastq files under a certain barcode/sample number from an expedition results folder.
 
@@ -121,23 +124,16 @@ def extract_fastq(main_dir, barcode_nb, dst):
     Returns:
         None
     """
-    search_dirs=[]
     for root, dirs, files in os.walk(main_dir):
         if "fastq_pass" in dirs:
-            search_dirs.append(ospath.join(root, "fastq_pass"))
-        if "barcoding" in dirs:
-            search_dirs.append(ospath.join(root, "barcoding"))
-        
-    for search_dir in search_dirs:
-        for root, dirs, files in os.walk(search_dir):
-            if f"barcode{barcode_nb}" in dirs:
-                fastq_dir = ospath.join(root, f"barcode{barcode_nb}")
-                print(fastq_dir)
-                concatenate_fastq(fastq_dir, dst)
-            elif f"barcode0{barcode_nb}" in dirs:
-                fastq_dir = ospath.join(root, f"barcode0{barcode_nb}")
-                print(fastq_dir)
-                concatenate_fastq(fastq_dir, dst)
+            pass_dir = ospath.join(root, "fastq_pass")
+            break
+    for root, dirs, files in os.walk(pass_dir):
+        if f"barcode{sample_nb}" in dirs:
+            fastq_dir = ospath.join(root, f"barcode{sample_nb}")
+        elif f"barcode0{sample_nb}" in dirs:
+            fastq_dir = ospath.join(root, f"barcode0{sample_nb}")
+    concatenate_fastq(fastq_dir, dst)
 
 #----------------------------------
 #GET AND VISUALIZE QUALITY SCORES
