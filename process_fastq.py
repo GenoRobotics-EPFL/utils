@@ -6,7 +6,8 @@ import os.path as ospath
 import os
 import gzip
 import shutil
-import sys import matplotlib.pyplot as plt
+import sys 
+import matplotlib.pyplot as plt
 
 
 #----------------------------
