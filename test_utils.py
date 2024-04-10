@@ -28,7 +28,7 @@ def test_quality_scores():
 
 def test_create_random_sequence():
     seed=1
-    random_seq = process_fastq.create_random_sequence(50,1)
+    random_seq = process_fastq.create_random_sequence(50,seed)
     assert random_seq == "TAGACCCCTACACCACGTAGAAAACTCATCCTGTTCGACATGAGCTGGCC"
 
 def test_mutation():
