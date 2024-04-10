@@ -9,19 +9,18 @@ Entrez.email = 'contact@genorobotics.org'
 #-------------------------------
 
 def build_search_term(gene_name, min_len=0, max_len=-1):
-    """ generate a search query for NCBI's nucleotide database (GenBank). Bio.Entrez does not provide filters such as sequence length and gene name
+    """ 
+    Generate a search query for NCBI's nucleotide database (GenBank). Bio.Entrez does not provide filters such as sequence length and gene name
     so a search query keywords must be used instead.
     Used to make database queries in extract_database and download_database
     
-    Parameters
-    ----------
-        gene_name: (str) name of the gene of interest
-        min_len: (int, optional) lower bound of the sequence length filter, by default 0
-        max_len: (int, optional) upper bound of the sequence length filter, by default -1 means no limit
+    Parameters: 
+        gene_name(str): name of the gene of interest
+        min_len(int, optional): lower bound of the sequence length filter, by default 0
+        max_len(int, optional): upper bound of the sequence length filter, by default -1 means no limit
     
-    Returns
-    ----------
-        term: (str) search query
+    Returns:
+        term(str): search query
     """
     term = f"{gene_name}[Gene Name]"
     if max_len == -1:
@@ -32,17 +31,16 @@ def build_search_term(gene_name, min_len=0, max_len=-1):
 
 
 def extract_database(gene_name, seqlen_start=0, seqlen_stop=-1):
-    '''Request data on GenBank from NCBI (with Entrez module), with filtering options
+    '''
+    Request data on GenBank from NCBI (with Entrez module), with filtering options
 
-    Parameters
-    ----------
-        gene_name: (str) name of the gene to extract from GenBank
-        seqlen_start: (int, optional) lower bound of the sequence length filter, by default 0
-        seqlen_stop: (int, optional) upper bound of the sequence length filter, by default -1 means no limit
+    Parameters:
+        gene_name(str): name of the gene to extract from GenBank
+        seqlen_start(int, optional): lower bound of the sequence length filter, by default 0
+        seqlen_stop(int, optional): upper bound of the sequence length filter, by default -1 means no limit
 
-    Returns
-    ----------
-        seq_record: (str) raw data of all sequences
+    Returns:
+        seq_record(str): raw data of all sequences
     '''
     handle = Entrez.esearch(db= "nucleotide", term= build_search_term(gene_name, seqlen_start, seqlen_stop), retmax = 10000)
     record = Entrez.read(handle)
@@ -60,15 +58,16 @@ def extract_database(gene_name, seqlen_start=0, seqlen_stop=-1):
 
 
 def download_database(gene_name, seqlen_start=0, seqlen_stop=-1):
-    '''Download data to a .fasta file, with filtering options
+    '''
+    Download data to a .fasta file, with filtering options
 
     Args:
-        gene_name: (str) name of the gene to extract from GenBank
-        seqlen_start: (int) lower bound of the sequence length filter
-        seqlen_stop: (int) upper bound of the sequence length filter
+        gene_name(str): name of the gene to extract from GenBank
+        seqlen_start(int): lower bound of the sequence length filter
+        seqlen_stop(int): upper bound of the sequence length filter
 
     Returns:
-        data_path: (str) path to downloaded data .fasta file
+        data_path(str): path to downloaded data .fasta file
     '''
     data_path = f"{gene_name}[{seqlen_start},{seqlen_stop}].fasta"
     with open(data_path, mode="w") as file:
@@ -77,17 +76,16 @@ def download_database(gene_name, seqlen_start=0, seqlen_stop=-1):
 
 def download_sequence(species, gene_name, dst, start_length=None, stop_length= None, id = None, permissive_search = True):
     """
-    download sequence from GenBank through the Entrez database. 
+    Download sequence from GenBank through the Entrez database. 
 
     Parameters:
-    ----------
-    species(str): name of species
-    gene_name(str): name of gene
-    dst(str,Path-like): destination file path
-    start_length(int): minimum length of sequence
-    stop_length(int): maximum length of sequence
-    id(list): list of NCBi ids of sequences to download. If provided, overrides gene_name and species.
-    permissive_search(bool, default = True): when True, if Advanced NCBI query returns nothing, replace it with a less precise general query.
+        species(str): name of species
+        gene_name(str): name of gene
+        dst(str,Path-like): destination file path
+        start_length(int): minimum length of sequence
+        stop_length(int): maximum length of sequence
+        id(list): list of NCBi ids of sequences to download. If provided, overrides gene_name and species.
+        permissive_search(bool, default = True): when True, if Advanced NCBI query returns nothing, replace it with a less precise general query.
     """
     
     if id == None:
