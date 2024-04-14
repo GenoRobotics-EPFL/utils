@@ -107,7 +107,7 @@ def concatenate_fastq(src_folder=None, dst=None):
             break
 
 
-def extract_fastq(main_dir, barcode_nb, dst):
+def extract_fastq(main_dir, barcode_nb, dst, where_to_look=["fastq_pass"]):
     """
     extract all fastq files under a certain barcode/sample number from an expedition results folder.
 
@@ -116,23 +116,21 @@ def extract_fastq(main_dir, barcode_nb, dst):
     main_dir: expedition folder path
     sample_nb: sample number for which to extract fastq. ie 6 to extract from folder barcode06
     dst: destination file path
+    where_to_look:(by default "fastq_pass") list of directories within the expedition folder where to look for barcoded fastqs
     """
     search_dirs=[]
     for root, dirs, files in os.walk(main_dir):
-        if "fastq_pass" in dirs:
-            search_dirs.append(ospath.join(root, "fastq_pass"))
-        if "barcoding" in dirs:
-            search_dirs.append(ospath.join(root, "barcoding"))
+        for potential_dir in where_to_look:
+            if potential_dir in dirs:
+                search_dirs.append(ospath.join(root, potential_dir))
         
     for search_dir in search_dirs:
         for root, dirs, files in os.walk(search_dir):
             if f"barcode{barcode_nb}" in dirs:
                 fastq_dir = ospath.join(root, f"barcode{barcode_nb}")
-                print(fastq_dir)
                 concatenate_fastq(fastq_dir, dst)
             elif f"barcode0{barcode_nb}" in dirs:
                 fastq_dir = ospath.join(root, f"barcode0{barcode_nb}")
-                print(fastq_dir)
                 concatenate_fastq(fastq_dir, dst)
 
 #----------------------------------
